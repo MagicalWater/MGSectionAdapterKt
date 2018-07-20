@@ -1,29 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
-ext {
-    bintrayRepo = 'mgbase'
-    bintrayName = 'mg-section-adapter-kt'
-
-    publishedGroupId = 'org.mgwater.mgbase'
-    libraryName = 'MGSectionAdapterKt'
-    artifact = 'mg-section-adapter-kt'
-
-    libraryDescription = 'All item in recyclerview can be a section'
-
-    siteUrl = 'https://github.com/CrazyDavis/MGSectionAdapterKt'
-    gitUrl = 'https://github.com/CrazyDavis/MGSectionAdapterKt.git'
-
-    libraryVersion = '0.0.1'
-
-    developerId = 'water'
-    developerName = 'Water'
-    developerEmail = 'crazydennies@gmail.com'
-
-    licenseName = 'The MIT License (MIT)'
-    licenseUrl = 'https://opensource.org/licenses/MIT'
-    allLicenses = ["MIT"]
-}
 android {
     compileSdkVersion 27
 
@@ -53,18 +30,38 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+//    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     implementation 'com.android.support:recyclerview-v7:27.1.1'
 
     //json
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.2"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.2"
 }
 
-repositories {
-    mavenCentral()
+
+/**以下是bintray上傳相關資訊*/
+apply plugin: 'com.novoda.bintray-release'
+
+//项目主页
+def siteUrl = 'https://github.com/CrazyDavis/MGSectionAdapterKt'
+
+//bintray上傳參考: https://blog.csdn.net/qq_23179075/article/details/71123452
+publish{
+    repoName = 'mgbase'//遠曾倉庫名稱, 默認上傳到maven
+    userOrg = 'water'//bintray.com用戶名
+    groupId = 'org.mgwater.mgbase'//jcenter上的路徑
+    artifactId = 'mg-section-adapter-kt'//項目名稱
+    publishVersion = '0.0.1'//版本
+    desc = 'All item in recyclerview can be a section '//描述，不重要
+    website = siteUrl//項目主頁
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+tasks.withType(Javadoc) {//防止編碼問題
+    excludes = ['**/*.kt'] // < ---- Exclude all kotlin files from javadoc file.
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addStringOption('encoding', 'UTF-8')
+    options.addStringOption('charSet', 'UTF-8')
+}
+/**以上是bintray上傳相關資訊*/
