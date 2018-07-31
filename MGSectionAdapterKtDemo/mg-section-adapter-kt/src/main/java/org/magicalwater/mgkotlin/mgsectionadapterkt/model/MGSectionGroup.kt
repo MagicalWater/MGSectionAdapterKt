@@ -1,7 +1,7 @@
 package org.magicalwater.mgkotlin.mgsectionadapterkt.model
 
 import org.magicalwater.mgkotlin.mgsectionadapterkt.adapter.MGBaseAdapter
-import org.magicalwater.mgkotlin.mgsectionadapterkt.utils.MGJsonDataParseUtils
+import org.magicalwater.mgkotlin.mgutilskt.util.MGJsonDataParseUtils
 
 /**
  * Created by 志朋 on 2017/12/19.

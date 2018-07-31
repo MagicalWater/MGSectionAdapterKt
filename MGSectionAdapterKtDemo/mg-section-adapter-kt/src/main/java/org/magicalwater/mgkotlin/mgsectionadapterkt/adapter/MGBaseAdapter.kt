@@ -17,8 +17,10 @@ import org.magicalwater.mgkotlin.mgsectionadapterkt.holder.MGBaseHolder
 import org.magicalwater.mgkotlin.mgsectionadapterkt.model.MGSection
 import org.magicalwater.mgkotlin.mgsectionadapterkt.model.MGSectionGroup
 import org.magicalwater.mgkotlin.mgsectionadapterkt.model.MGSectionPos
-import org.magicalwater.mgkotlin.mgsectionadapterkt.utils.MGTimerUtils
 import org.magicalwater.mgkotlin.mgsectionadapterkt.R
+import org.magicalwater.mgkotlin.mgsectionadapterkt.holder.MGLoadHolder
+import org.magicalwater.mgkotlin.mgsectionadapterkt.holder.MGLoadmoreHolder
+import org.magicalwater.mgkotlin.mgsectionadapterkt.holder.MGLoadtopHolder
 
 /**
  * Created by 志朋 on 2017/12/17.
@@ -27,6 +29,11 @@ import org.magicalwater.mgkotlin.mgsectionadapterkt.R
  *  1.加載更多 - 實現 MGLoadmoreDelegate 並傳入, 並且將 MGSectionGroup 的 hasOuterFooter 設定為 true
  *  2.加載置頂 - 實現 MGLoadtopDelegate 並傳入, 並且將 MGSectionGroup 的 hasOuterHeader 設定為 true
  */
+
+/**
+ * 2018/07/23: 刪除加載置頂/更多動畫顯示
+ * 因為動畫顯示會需要重新載入item, 可能會造成顯示不順暢
+ * */
 abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<MGBaseHolder>(), MGSectionDelegate {
 
     companion object {
@@ -58,60 +65,57 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     final override fun onBindViewHolder(holder: MGBaseHolder, position: Int) {
         when {
             (sectionGroup.outerHeader && position == 0) -> {
+                if (holder !is MGLoadHolder) return
                 //如果正在休息, 跳過
                 if (!loadtopHelper.isBreath && loadtopDelegate?.hasLoadTop() == true) {
                     //如果正在加載置頂, 也跳過
                     if (!loadtopHelper.isLoading) {
-                        showLoadtop(holder.itemView)
+                        holder.showStatus(true)
+//                        showLoadtop(holder.itemView)
                         loadtopHelper.isLoading = true
-                        MGTimerUtils.countDown(loadtopHelper.animDuration) {
-                            loadtopDelegate?.startLoadTop()
-                        }.start()
+                        loadtopDelegate?.startLoadTop()
                     }
+                } else {
+                    holder.showStatus(false)
+//                    hideLoadtop(holder.itemView)
                 }
-                else hideLoadtop(holder.itemView)
                 bindOutterHeaderHolder(holder)
             }
 
             (sectionGroup.outerFooter && position+1 == sectionGroup.getAllCount()) -> {
+                if (holder !is MGLoadHolder) return
                 //如果正在休息, 跳過
                 if (!loadmoreHelper.isBreath && loadmoreDelegate?.hasLoadmore() == true) {
                     //如果正在加載更多, 也跳過
                     if (!loadmoreHelper.isLoading) {
-                        showLoadmore(holder.itemView)
+                        holder.showStatus(true)
+//                        showLoadmore(holder.itemView)
                         loadmoreHelper.isLoading = true
-                        MGTimerUtils.countDown(loadmoreHelper.animDuration) {
-                            loadmoreDelegate?.startLoadmore()
-                        }.start()
+                        loadmoreDelegate?.startLoadmore()
                     }
+                } else {
+                    holder.showStatus(false)
+//                    hideLoadmore(holder.itemView)
                 }
-                else hideLoadmore(holder.itemView)
                 bindOutterFooterHolder(holder)
             }
 
-
-
             else -> {
-
                 when {
                     sectionGroup.positionsHeaderCache.containsKey(position) -> {
                         holder.header = sectionGroup.positionsHeaderCache[position]!!
                         bindHeaderHolder(holder, holder.header!!, position)
                     }
-
                     sectionGroup.positionsFooterCache.containsKey(position) -> {
                         holder.footer = sectionGroup.positionsFooterCache[position]!!
                         bindFooterHolder(holder, holder.footer!!, position)
                     }
-
-
                     else -> {
                         holder.section = sectionGroup.getSection(position)
 //                        slideInBottom(holder.itemView, 0)
                         bindBodyHolder(holder, holder.section!!, position)
                     }
                 }
-
             }
         }
     }
@@ -143,10 +147,8 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
                     else -> createBodyHolder(parent, viewType)
                 }
             }
-
         }
     }
-
 
     final override fun getItemCount(): Int {
         val count = sectionGroup.getAllCount()
@@ -155,12 +157,9 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     }
 
     class SpringInterpolator: Interpolator {
-
-
         override fun getInterpolation(p0: Float): Float {
             return Math.sin(p0 * 2 * Math.PI).toFloat()
         }
-
     }
 
     final override fun getItemViewType(position: Int): Int {
@@ -182,7 +181,8 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     //從 itemView 找出 holder, 通常用於 holder 點擊事件
     fun <T: MGBaseHolder> findHolder(byView: View): T? {
 //        return findHolderForAll(byView)
-        return recyclerView.findContainingViewHolder(byView) as? T
+        val holder = recyclerView.findContainingViewHolder(byView)
+        return holder as? T
     }
 
     //搜尋現存的全部holder, 以及子view, 找尋holder, 只在 LinearLayoutManager 有效
@@ -197,10 +197,10 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
             (firstVisibleItemPosition..lastVisibleItemPosition).forEach { i ->
                 val innerHolder = recyclerView.findViewHolderForAdapterPosition(i) as? T
                 if (innerHolder != null) {
-                    println("($i) 先印出holder name = ${innerHolder.javaClass.name}")
-                    println("($i) 再印出itemview name = ${innerHolder.itemView.javaClass.name}")
+//                    println("($i) 先印出holder name = ${innerHolder.javaClass.name}")
+//                    println("($i) 再印出itemview name = ${innerHolder.itemView.javaClass.name}")
                     if (findAllChild(byView, innerHolder.itemView)) {
-                        println("($i) 找到目標 印出itemview name = ${innerHolder.itemView.javaClass.name}")
+//                        println("($i) 找到目標 印出itemview name = ${innerHolder.itemView.javaClass.name}")
                         holder = innerHolder
                         return@forEach
                     }
@@ -215,7 +215,6 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
         }
         return holder
     }
-
 
     /**
      * 搜尋所有的子view, 是否有和需要被搜尋相同的
@@ -258,7 +257,7 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     //但若有需要也可複寫此方法重寫顯示樣式
     fun createOuterHeaderHolder(parent: ViewGroup?, type: Int): MGBaseHolder {
         val v = LayoutInflater.from(recyclerView.context).inflate(R.layout.holder_mg_outter_header, parent, false)
-        return MGBaseHolder(v)
+        return MGLoadtopHolder(v)
     }
 
 
@@ -266,7 +265,7 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     //但若有需要也可複寫此方法重寫顯示樣式
     fun createOuterFooterHolder(parent: ViewGroup?, type: Int): MGBaseHolder {
         val v = LayoutInflater.from(recyclerView.context).inflate(R.layout.holder_mg_outter_footer, parent, false)
-        return MGBaseHolder(v)
+        return MGLoadmoreHolder(v)
     }
 
     //滑動到底部, 只有linearlayout呼叫有效
@@ -359,6 +358,12 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
         return holder?.section
     }
 
+    //從 平鋪後的位置找出 MGSection
+    override fun findSection(byAbsolutePos: Int): MGSection {
+        val section = sectionGroup.getSection(byAbsolutePos)
+        return section
+    }
+
     override fun quickSetSection(count: Int, type: Int?) {
         if (type == null) sectionGroup.setSections(count)
         else sectionGroup.setSections(count, type)
@@ -381,14 +386,16 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
         sectionGroup.appendSectionChild(inSection, type, count)
     }
 
-
     override fun setOuterHolder(top: Boolean, bottom: Boolean) {
         sectionGroup.outerHeader = top
         sectionGroup.outerFooter = bottom
     }
     //****************************************************************************//
 
-
+    /**
+     * 2018/07/23: 取消加載置頂/更多動畫
+     * */
+    /*
     //頂部加載置頂時出現動畫
     private fun showLoadtop(item: View) {
         item.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
@@ -429,6 +436,7 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
     private fun hideLoadmore(item: View) {
         item.layoutParams.height = 1
     }
+    */
 
     //加載更多結束時需要手動呼叫此方法, 讓adapter知道已經加載完了
     fun endLoadmore() {
@@ -450,13 +458,11 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
         loadtopHelper.isBreath = breath
     }
 
-
     //回傳當前是否有資料加載, 為的是空白頁面的顯示
     //默認是檢查 itemcount的數量是否為0, 但也許有其他狀況, 因此可以讓繼承adapter改寫
     open fun isAdapterEmpty(): Boolean {
         return itemCount == 0
     }
-
 
     /**
      * @param position 平鋪部分的順序
@@ -473,11 +479,9 @@ abstract class MGBaseAdapter(recyclerView: RecyclerView): RecyclerView.Adapter<M
      * */
     open fun bindFooterHolder(holder: MGBaseHolder, header: MGSectionGroup.MGSectionFooter, position: Int) {}
 
-
     //為瀑布流滑到最頂端時開啟 為您載入 功能
     open fun bindOutterHeaderHolder(holder: MGBaseHolder) {
     }
-
 
     //為滑動到最底端時開啟 加載更多 功能
     open fun bindOutterFooterHolder(holder: MGBaseHolder) {

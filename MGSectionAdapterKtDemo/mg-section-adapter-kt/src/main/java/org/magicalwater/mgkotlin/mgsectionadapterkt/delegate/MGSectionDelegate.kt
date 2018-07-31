@@ -43,6 +43,9 @@ interface MGSectionDelegate {
     //從 itemView 找出 section
     fun findSection(byView: View): MGSection?
 
+    //從 平鋪後的位置找出 MGSection
+    fun findSection(byAbsolutePos: Int): MGSection
+
     //快速設定 第一層 section 的數量
     fun quickSetSection(count: Int, type: Int?)
 
